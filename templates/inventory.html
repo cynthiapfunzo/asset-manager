@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowed Items{% endblock %}
+{% block content %}
+<!-- Search Form -->
+<form method="GET" action="{{ url_for('index') }}" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search by asset tag" value="{{ request.args.get('search', '') }}">
+        <button type="submit" class="btn btn-outline-secondary">Search</button>
+    </div>
+</form>
+
+<!-- Assuming you have a table displaying assets -->
+
+    <div class="table-body" style="height: 600px; overflow-y: auto;">
+        <table class="table table-striped ">
+            <thead class="bg-light sticky-top">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Asset Tag</th>
+                    <th>Serial No.</th>
+                    <th>Actions</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for asset in assets %}
+                <tr>
+                    <td>{{ asset.name }}</td>
+                    <td>{{ asset.type }}</td>
+                    <td>{{ asset.asset_number }}</td>
+                    <td>{{ asset.serial_number }}</td>
+                    <td>
+                        <!-- Borrow Button -->
+                        {% if not asset.is_borrowed %}
+                            <button type="button" class="btn btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#borrowModal{{ asset.id }}">
+                                Borrow
+                            </button>
+                        {% endif %}
+
+                        <!-- Borrow Modal -->
+                        <div class="modal fade" id="borrowModal{{ asset.id }}" tabindex="-1" aria-labelledby="borrowModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="borrowModalLabel">Borrow Asset</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form id="borrowForm{{ asset.id }}">
+                                            <div class="mb-3">
+                                                <label for="borrower_name" class="form-label">Borrower's Name:</label>
+                                                <input type="text" class="form-control" id="borrower_name{{ asset.id }}" required>
+                                            </div>
+                                            <input type="hidden" id="asset_id" value="{{ asset.id }}">
+                                            <div class="mb-3">
+                                                <label for="borrow_date" class="form-label">Borrow Date:</label>
+                                                <input type="date" class="form-control" id="borrow_date{{ asset.id }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="borrow_length" class="form-label">Length(Days):</label>
+                                                <input type="text" class="form-control" id="borrow_length{{ asset.id }}" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-success">Confirm Borrow</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailsModal{{ asset.id }}">
+                            View Details
+                        </button>
+                        <!-- Modal for asset details -->
+                        {% include 'details_modal.html' %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('form[id^="borrowForm"]');
+
+            forms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const assetId = this.querySelector('input[type="hidden"]').value;
+                    const borrowerName = this.querySelector('input[id^="borrower_name"]').value;
+                    const borrowDate = this.querySelector('input[id^="borrow_date"]').value;
+                    const borrowLength = this.querySelector('input[id^="borrow_length"]').value;
+
+                    fetch(`/borrow/${assetId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            borrower_name: borrowerName,
+                            borrow_date: borrowDate,
+                            borrow_length: borrowLength
+                        }),
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Asset borrowed successfully!');
+                                location.reload(); // Refresh the page to see changes
+                            } else {
+                                alert('Error borrowing asset');
+                            }
+                        });
+                });
+            });
+        });
+    </script>
+{% endblock %}
+

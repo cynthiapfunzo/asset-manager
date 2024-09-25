@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Borrowed Items{% endblock %}
+
+{% block content %}
+    <h1 class="text-center mb-4">Currently Borrowed Items</h1>
+<!-- Search Form -->
+<form method="GET" action="{{ url_for('borrowed') }}" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search by asset tag" value="{{ request.args.get('search', '') }}">
+        <button type="submit" class="btn btn-outline-secondary">Search</button>
+    </div>
+</form>
+    <div class="table-body" style="height: 600px; overflow-y: auto;">
+        <table class="table table-striped">
+            <thead class="bg-light sticky-top">
+            <tr>
+                <th>Name</th>
+                <th>Borrower Name</th>
+                <th>Asset Tag</th>
+                <th>Lender</th>
+                <th>Return Date</th>
+                <th>Actions</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for asset in assets %}
+                <!-- Determine the background color based on the return date -->
+                {% set row_class = "" %}
+                {% if asset.return_date and asset.return_date.date() < current_date %}
+                    {% set row_class = "bg-danger-subtle" %}  <!-- Red if the return date has passed -->
+                {% elif asset.return_date and asset.return_date.date() == current_date %}
+                    {% set row_class = "bg-warning-subtle" %}  <!-- Yellow if the return date is today -->
+                {% endif %}
+                <tr class="{{ row_class }}">
+                    <td>{{ asset.name }}</td>
+                    <td>{{ asset.borrower_name }}</td>
+                    <td>{{ asset.asset_number }}</td>
+                    <td>{{ asset.admin_id }}</td>
+                    <td>{{ asset.return_date.strftime('%Y-%m-%d') if asset.return_date else 'N/A' }}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger return-btn" data-id="{{ asset.id }}">
+                            Return
+                        </button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailsModal{{ asset.id }}">
+                            View Details
+                        </button>
+                        <!-- Modal for asset details -->
+                        {% include 'details_modal.html' %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<script>
+    document.querySelectorAll('.return-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const assetId = this.getAttribute('data-id');
+
+            fetch(`/return/${assetId}`, {
+                method: 'POST',
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Item returned successfully!');
+                        location.reload(); // Refresh the page to see changes
+                    } else {
+                        alert('Error returning item');
+                    }
+                });
+        });
+    });
+</script>
+{% endblock %}

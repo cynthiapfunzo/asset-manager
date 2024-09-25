@@ -1,0 +1,47 @@
+<!-- Modal Template -->
+<div class="modal fade" id="detailsModal{{ asset.id }}" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <!-- Add modal-lg here for larger modal -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">{{ asset.name }} - Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-7">
+                        <!-- Check if image exists and display it -->
+                        {% if asset.photo_path %}
+                        <img src="{{ asset.photo_path }}" alt="{{ asset.name }}" class="img-fluid mb-3" style="max-width: 100%; height: auto;" />
+                        {% else %}
+                        <img src="/static/images/placeholder.png" alt="No image available" class="img-fluid mb-3" style="max-width: 100%; height: auto;" />
+                        {% endif %}
+                    </div>
+                    <div class="col-md-5">
+                        <!-- Display the asset details -->
+                        <ul class="list-group">
+                            <li class="list-group-item"><strong>Type:</strong> {{ asset.type }} {{ asset.photo_path }}</li>
+                            <li class="list-group-item"><strong>Serial Number:</strong> {{ asset.serial_number }}</li>
+                            <li class="list-group-item"><strong>Borrower:</strong> {{ asset.borrower_name if asset.is_borrowed else 'N/A' }}</li>
+                            <li class="list-group-item"><strong>Borrow Date:</strong> {{ asset.borrow_date.strftime('%Y-%m-%d') if asset.borrow_date else 'N/A' }}</li>
+                            <li class="list-group-item"><strong>Return Date:</strong> {{ asset.return_date.strftime('%Y-%m-%d') if asset.return_date else 'N/A' }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <form action="{{ url_for('delete_asset', asset_id=asset.id) }}" method="POST" id="deleteForm{{ asset.id }}" onsubmit="return false;">
+                    <button type="button" class="btn btn-danger" ondblclick="confirmDelete({{ asset.id }})">Delete</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(assetId) {
+        if (confirm('Are you sure you want to delete this asset?')) {
+            document.getElementById('deleteForm' + assetId).submit();
+        }
+    }
+</script>

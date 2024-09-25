@@ -1,0 +1,16 @@
+.fixed-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030; /* Ensure it stays above other content */
+}
+
+.nav-tabs {
+    margin: 0; /* Remove default margins if necessary */
+}
+
+body {
+    padding-top: 56px; /* Adjust this value based on your navbar height */
+}
+
