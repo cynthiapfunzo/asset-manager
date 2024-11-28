@@ -79,11 +79,11 @@ def add():
 
         # Handle file upload
         photo = request.files['photo']
-        photo_path = None
+        photo_uri = None
         if photo:
             # Secure the filename and save it
             filename = secure_filename(photo.filename)
-            upload_folder = os.path.join(current_app.static_folder, 'uploads', filename)
+            upload_folder = os.path.join(current_app.static_folder, 'uploads')
 
             # Create the uploads folder if it doesn't exist
             if not os.path.exists(upload_folder):
@@ -91,6 +91,7 @@ def add():
 
             # Construct the path to save the file
             photo_path = os.path.join(upload_folder, filename)
+            photo_uri = os.path.join('static/uploads', filename)
 
             # Save the file to the specified folder
             photo.save(photo_path)
@@ -100,7 +101,7 @@ def add():
             type=asset_type,
             serial_number=serial_number,
             asset_number=asset_number,
-            photo_path=photo_path
+            photo_path=photo_uri
         )
         db.session.add(new_asset)
         db.session.commit()
