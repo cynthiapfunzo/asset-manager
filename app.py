@@ -23,6 +23,8 @@ app.config['LDAP_USER_RDN_ATTR'] = 'cn'
 app.config['LDAP_USER_LOGIN_ATTR'] = 'sAMAccountName'
 app.config['LDAP_BIND_AUTH'] = True
 
+app.secret_key = os.urandom(24)
+
 db.init_app(app)
 
 ldap_manager = LDAP3LoginManager(app)
