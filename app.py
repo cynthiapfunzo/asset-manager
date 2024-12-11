@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta, date
-import dotenv
+
 from flask_ldap3_login import LDAP3LoginManager
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask import Flask, flash, render_template, redirect, url_for, request, session, current_app, jsonify
@@ -15,23 +15,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["SQLALCHEMY_DATABASE_URI"]
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configuration for LDAP
-app.config['LDAP_HOST'] = 'ldap://your-ldap-server'
-app.config['LDAP_BASE_DN'] = 'DC=example,DC=com'
-app.config['LDAP_USER_DN'] = 'OU=Users'
-app.config['LDAP_GROUP_DN'] = 'OU=Groups'
-app.config['LDAP_BIND_USER_DN'] = 'CN=bind_user,OU=Users,DC=example,DC=com'
-app.config['LDAP_BIND_USER_PASSWORD'] = 'bind_password'
-app.config['LDAP_USER_RDN_ATTR'] = 'cn'
-app.config['LDAP_USER_LOGIN_ATTR'] = 'sAMAccountName'
-app.config['LDAP_BIND_AUTH'] = True
+app.config['LDAP_HOST'] = os.environ['LDAP_HOST']
+app.config['LDAP_BASE_DN'] = 'DC=saao'
+app.config['LDAP_USER_DN'] = 'OU=people'
 
 app.secret_key = os.urandom(24)
 
 db.init_app(app)
 
+login_manager = LoginManager(app)
 ldap_manager = LDAP3LoginManager(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
 
 # User class for Flask-Login
 class UserM(UserMixin):
@@ -182,14 +175,21 @@ def login():
     password = ""
     error = None
     if request.method == "POST":
+        # Authenticate against LDAP
         username = request.form["username"]
         password = request.form["password"]
-        if username == "admin":
+        response = app.ldap3_login_manager.authenticate(username, password)
+        if response.user_info:
+            # Try to get the user from the database
             user = User.query.filter_by(username=username).first()
+            if not user:
+                user = User(username=username)
+                db.session.add(user)
+                db.session.commit()
             login_user(user)
             return redirect("/")
         else:
-            error = "Username or password wrong."
+             error = "Username or password wrong."
     return render_template('login.html', username=username, password=password, error=error)
 
 
