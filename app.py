@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, date
+import dotenv
 from flask_ldap3_login import LDAP3LoginManager
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask import Flask, flash, render_template, redirect, url_for, request, session, current_app, jsonify
@@ -7,9 +8,10 @@ from werkzeug.utils import secure_filename
 
 from models import db, Asset, User
 
+
 app = Flask(__name__)
 app.debug = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assets.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["SQLALCHEMY_DATABASE_URI"]
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configuration for LDAP
@@ -28,8 +30,8 @@ app.secret_key = os.urandom(24)
 db.init_app(app)
 
 ldap_manager = LDAP3LoginManager(app)
-login_manager = LoginManager(app)
-
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 # User class for Flask-Login
 class UserM(UserMixin):
@@ -45,7 +47,6 @@ def load_user(user_id):
 
 # Route for borrowing an item
 @app.route('/')
-# @login_required
 def index():
     search_query = request.args.get('search', '')
     if search_query:
@@ -55,7 +56,7 @@ def index():
     return render_template('inventory.html', assets=assets)
 
 @app.route('/borrowed')
-# @login_required
+@login_required
 def borrowed():
     search_query = request.args.get('search', '')
     if search_query:
@@ -71,7 +72,7 @@ def borrowed():
     return render_template('borrowed.html', assets=borrowed_assets, current_date=current_date)
 
 @app.route('/add', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def add():
     if request.method == 'POST':
         name = request.form['name']
@@ -143,6 +144,7 @@ def return_asset(asset_id):
 
 
 @app.route('/statistics')
+@login_required
 def statistics():
     assets = Asset.query.all()
 
@@ -159,7 +161,7 @@ def statistics():
 
 
 @app.route('/delete_asset/<int:asset_id>', methods=['POST'])
-# @login_required  # Optional: if you want only logged-in users to delete
+@login_required  # Optional: if you want only logged-in users to delete
 def delete_asset(asset_id):
     # Query the asset by ID
     asset = Asset.query.get_or_404(asset_id)
@@ -176,8 +178,19 @@ def delete_asset(asset_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Your LDAP authentication code here
-    return render_template('login.html')
+    username = ""
+    password = ""
+    error = None
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if username == "admin":
+            user = User.query.filter_by(username=username).first()
+            login_user(user)
+            return redirect("/")
+        else:
+            error = "Username or password wrong."
+    return render_template('login.html', username=username, password=password, error=error)
 
 
 @app.route('/logout')
