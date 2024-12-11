@@ -16,10 +16,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configuration for LDAP
 app.config['LDAP_HOST'] = os.environ['LDAP_HOST']
-app.config['LDAP_BASE_DN'] = 'DC=saao'
-app.config['LDAP_USER_DN'] = 'OU=people'
+app.config['LDAP_BASE_DN'] = os.environ['LDAP_BASE_DN']
+app.config['LDAP_USER_DN'] = os.environ['LDAP_USER_DN']
 
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ['SECRET_KEY']
 
 db.init_app(app)
 
