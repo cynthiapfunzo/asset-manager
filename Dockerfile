@@ -9,6 +9,7 @@ COPY . /app
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install gunicorn
 
 # Set environment variables for Flask
 ENV FLASK_APP=app.py
@@ -19,4 +20,4 @@ ENV FLASK_RUN_PORT=5000
 EXPOSE 5000
 
 # Run the Flask application using the flask command
-CMD ["flask", "run"]
+CMD ["gunicorn", "-w", "4", "app:app"]
